@@ -1,7 +1,8 @@
 {
   "profiles": {
     "CES": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "66666 1015470"
     }
   }
 }

@@ -117,6 +117,7 @@ namespace ChainMonitor
                 return 0;
             var json = JObject.Parse(info);
             JArray result = json["result"] as JArray;
+            wc.Dispose();
             return (int)result[0]["utxoDataHeight"];
         }
 
@@ -127,6 +128,7 @@ namespace ChainMonitor
             var info = wc.DownloadString(getcounturl);
             var json = JObject.Parse(info);
             JToken result = json["result"];
+            wc.Dispose();
             return result;
         }
 
@@ -142,6 +144,7 @@ namespace ChainMonitor
             var result = (JObject)(json["result"]);
             var executions = (result["executions"][0]) as JObject;
 
+            wc.Dispose();
             return executions["notifications"] as JArray;
 
         }

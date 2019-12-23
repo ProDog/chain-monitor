@@ -91,7 +91,7 @@ namespace ChainMonitor
     {
         public string Chain;
         public string ContractHash;
-        public uint BlockTime;
+        public ulong BlockTime;
         public ulong BlockHeight;
         public List<TransState> TransStates;
     }

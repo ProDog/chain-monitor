@@ -112,6 +112,18 @@ namespace ChainMonitor.Helper
             return "";
         }
 
+        public static string GetJsonHash(JObject item)
+        {
+            var type = item["type"].ToString();
+            var value = item["value"].ToString();
+            if (type == "ByteArray")
+            {
+                string hash = value.HexToBytes().Reverse().ToHexString();
+                return "0x" + hash;
+            }
+            return "";
+        }
+
         public static decimal GetJsonDecimal(JObject item, int decimals)
         {
             var type = item["type"].ToString();

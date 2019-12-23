@@ -20,8 +20,11 @@ namespace ChainMonitor
 
         public static Dictionary<string, string> _neoTokenHashDict;
 
+        public static Dictionary<string, string> _nftHashDict;
+        public static string _nftExchangeHash;
+
         public static string _destroyAddress;
-        public static string _destroyAddressHexString { get; private set; }
+        public static string _destroyAddressHexString { get; set; }
 
         public static JObject ConfigJObject = null;
 
@@ -51,6 +54,9 @@ namespace ChainMonitor
             _erc20TokenHashDict = getStringDic("erc20TokenHash");
             _erc20TokenDecimalDict = getIntDic("erc20TokenDecimal");
             _neoTokenHashDict = getStringDic("neoTokenHash");
+            _nftHashDict = getStringDic("nftHash");
+
+            _nftExchangeHash = getValue("nftExchangeHash");
 
             _destroyAddress = getValue("destroyAddress");
             _destroyAddressHexString = Helper.ZoroHelper.GetHexStringFromAddress(_destroyAddress);

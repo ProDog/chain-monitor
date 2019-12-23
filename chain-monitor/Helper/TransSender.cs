@@ -71,31 +71,34 @@ namespace ChainMonitor.Helper
 
                 byte[] data = dataBytes;
                 req.ContentLength = data.Length;
-                using (Stream reqStream = req.GetRequestStream())
-                {
-                    reqStream.Write(data, 0, data.Length);
-                    reqStream.Close();
-                }
+                Stream reqStream = req.GetRequestStream();
+                reqStream.Write(data, 0, data.Length);
 
                 Logger.Info(" Recharge send transInfo : " + Encoding.UTF8.GetString(data));
                 HttpWebResponse resp = (HttpWebResponse)req.GetResponseAsync().Result;
                 Stream stream = resp.GetResponseStream();
-                using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
+
+                StreamReader reader = new StreamReader(stream, Encoding.UTF8);
+
+                var result = reader.ReadToEnd();
+                var rjson = JObject.Parse(result);
+
+                if (req != null)
+                    req.Abort();
+                reqStream.Close();
+                resp.Close();
+                stream.Close();
+                reader.Close();
+
+                if (Convert.ToInt32(rjson["r"]) == 1)
                 {
-                    var result = reader.ReadToEnd();
-                    var rjson = JObject.Parse(result);
-
-                    if (Convert.ToInt32(rjson["r"]) == 1)
-                    {
-                        //保存交易信息
-                        DbHelper.SaveTransInfo(transList);
-                    }
-                    else
-                    {
-                        Logger.Warn("Recharge transInfo send fail:" + result);
-                        throw new Exception("Recharge transInfo send fail: " + result);
-                    }
-
+                    //保存交易信息
+                    DbHelper.SaveTransInfo(transList);
+                }
+                else
+                {
+                    Logger.Warn("Recharge transInfo send fail:" + result);
+                    throw new Exception("Recharge transInfo send fail: " + result);
                 }
 
             }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -59,6 +60,9 @@ namespace ChainMonitor
                 }
 
                 var data = sr.ReadToEnd();
+
+                Logger.Info($"data: {data}");
+
                 var json = new JObject();
                 if (!string.IsNullOrEmpty(data))
                     json = JObject.Parse(data);
@@ -102,19 +106,43 @@ namespace ChainMonitor
             {               
                 case "getBalance":
                     rspInfo = GetBalanceRsp(json);
-                    break;                
+                    break;
+                case "getBalances":
+                    rspInfo = GetBalancesRsp(json);
+                    break;
                 case "addAddress":
                     rspInfo = AddAddressRsp(json);
                     break;
                 case "getStatus":
                     rspInfo = GetProcStatus();
                     break;
-                        
                 default:
                     break;
             }
 
             return rspInfo;
+        }
+
+        private static RspInfo GetBalancesRsp(JObject json)
+        {
+            string chain = json["chain"].ToString().ToLower();
+            string coinType = json["coinType"].ToString().ToLower();
+            JArray addrJArray = json["address"] as JArray;
+
+            Dictionary<string,decimal> balanceDict = new Dictionary<string, decimal>();
+
+            switch (chain)
+            {                
+                case "zoro":
+                    balanceDict = GetZoroBalances(coinType, addrJArray);
+                    break;
+                case "neo":
+                    break;
+                case "btc":
+                    break;
+            }
+
+            return new RspInfo { state = true, msg = balanceDict };
         }
 
         private static RspInfo GetProcStatus()
@@ -190,6 +218,50 @@ namespace ChainMonitor
             }
 
             return new RspInfo { state = true, msg = new CoinInfon() { coinType = coinType, balance = value } };
+        }
+
+        private static Dictionary<string,decimal> GetZoroBalances(string coinType, JArray addrJArray)
+        {
+            Dictionary<string, decimal> balanceDict = new Dictionary<string, decimal>();
+
+            ScriptBuilder sb = new ScriptBuilder();
+            string tokenHash = Config._nep5TokenHashDict[coinType];
+            UInt160 nep5Hash = UInt160.Parse(tokenHash);
+
+            for (int i = 0; i < addrJArray.Count; i++)
+            {
+                var addrHash = ZoroHelper.GetPublicKeyHashFromAddress(addrJArray[i].ToString());
+
+                if (coinType == "bct" || coinType == "bcp" || coinType == "zoro")
+                    sb.EmitSysCall("Zoro.NativeNEP5.Call", "BalanceOf", nep5Hash, addrHash);
+                else
+                    sb.EmitAppCall(nep5Hash, "balanceOf", addrHash);
+            }
+
+            var info = ZoroHelper.InvokeScript(sb.ToArray(), "");
+
+            JObject json = JObject.Parse(info);          
+
+            if (json.ContainsKey("result"))
+            {
+                JObject json_result = json["result"] as JObject;
+                JArray stackJArray = json_result["stack"] as JArray;
+
+                if (addrJArray.Count == stackJArray.Count)
+                {
+                    int i = 0;
+                    for (int j = 0; j < stackJArray.Count; j++)
+                    {
+                        string result = ZoroHelper.GetJsonValue(stackJArray[j] as JObject);
+                        decimal value = Math.Round(decimal.Parse(result) / (decimal)Math.Pow(10, Config._nep5TokenDecimalDict[coinType]), Config._nep5TokenDecimalDict[coinType]);
+
+                        balanceDict[addrJArray[i].ToString()] = value;
+                        i++;
+                    }
+                }
+            }
+
+            return balanceDict;
         }
 
         private static decimal GetZoroBalance(string coinType, string address)

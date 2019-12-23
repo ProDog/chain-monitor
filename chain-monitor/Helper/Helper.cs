@@ -15,7 +15,9 @@ namespace ChainMonitor.Helper
         public static string HttpGet(string url)
         {
             WebClient wc = new WebClient();
-            return wc.DownloadString(url);
+            var res = wc.DownloadString(url);
+            wc.Dispose();
+            return res;
         }
 
         public static string HttpPost(string url, byte[] data)
@@ -23,6 +25,7 @@ namespace ChainMonitor.Helper
             WebClient wc = new WebClient();
             wc.Headers["content-type"] = "text/plain;charset=UTF-8";
             byte[] retdata = wc.UploadData(url, "POST", data);
+            wc.Dispose();
             return Encoding.UTF8.GetString(retdata);
         }
 

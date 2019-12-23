@@ -51,7 +51,7 @@ namespace ChainMonitor
         public static void Start()
         {            
             var policy = Policy.Handle<Exception>()
-                .WaitAndRetry(retryCount: 50 , sleepDurationProvider: aa => TimeSpan.FromSeconds(1), onRetry: (exception, aa, retryCount, Context) =>
+                .WaitAndRetry(retryCount: 100 , sleepDurationProvider: aa => TimeSpan.FromSeconds(1), onRetry: (exception, aa, retryCount, Context) =>
                  {
                      Logger.Warn($"ETH error,retry count:{retryCount}, exception:{exception.Message} " + exception.StackTrace);
                  });
@@ -144,7 +144,7 @@ namespace ChainMonitor
                 Erc20TransProc(web3, index);
             }
 
-            Logger.Info("eth parse height:" + index + " Tx:" + block.Transactions.Length);
+            //Logger.Info("eth parse height:" + index + " Tx:" + block.Transactions.Length);
 
             if (ethTransList.Count > 0)
             {
@@ -276,9 +276,12 @@ namespace ChainMonitor
         protected string _url = "";
         protected string _data = "";
 
+        protected WebClient wc;
+
         public BatchGetTransactionReceipt(string host)
         {
             _url = host;
+            wc = new WebClient();
         }
 
         public void beginBuildPar()
@@ -299,7 +302,6 @@ namespace ChainMonitor
 
         public JToken doRequest()
         {
-            WebClient wc = new WebClient();
             wc.Headers["content-type"] = "application/json;charset=utf-8";
             byte[] bd = Encoding.UTF8.GetBytes(_data);
             byte[] retdata = wc.UploadData(_url, "POST", bd);
